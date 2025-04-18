@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>MediAI - Your Medical Assistant</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary: #4361ee;
+      --primary-light: #4895ef;
+      --secondary: #3f37c9;
+      --accent: #f72585;
+      --light: #f8f9fa;
+      --dark: #212529;
+      --success: #4cc9f0;
+      --warning: #f8961e;
+      --danger: #ef233c;
+      --gray: #adb5bd;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .chat-app {
+      width: 100%;
+      max-width: 800px;
+      height: 90vh;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transform: scale(0.95);
+      opacity: 0;
+      animation: fadeInScale 0.5s ease-out forwards;
+    }
+
+    @keyframes fadeInScale {
+      from { transform: scale(0.95); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .chat-header {
+      background: linear-gradient(to right, var(--primary), var(--secondary));
+      color: white;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      z-index: 10;
+      position: relative;
+    }
+
+    .chat-header::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 0;
+      width: 100%;
+      height: 10px;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.1), transparent);
+    }
+
+    .chat-header img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
+    .chat-header-info h2 {
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+
+    .chat-header-info p {
+      font-size: 0.8rem;
+      opacity: 0.8;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .online-dot {
+      width: 8px;
+      height: 8px;
+      background-color: #4ade80;
+      border-radius: 50%;
+      animation: blink 2s infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .chat-body {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      background-color: #f8f9fa;
+      scroll-behavior: smooth;
+    }
+
+    .message {
+      max-width: 80%;
+      margin-bottom: 15px;
+      padding: 12px 16px;
+      border-radius: 18px;
+      line-height: 1.5;
+      position: relative;
+      animation: fadeIn 0.3s ease-out;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+      transform-origin: bottom;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .user-message {
+      background-color: var(--primary);
+      color: white;
+      margin-left: auto;
+      border-bottom-right-radius: 4px;
+      animation: slideInRight 0.3s ease-out;
+    }
+
+    @keyframes slideInRight {
+      from { opacity: 0; transform: translateX(20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .bot-message {
+      background-color: white;
+      color: var(--dark);
+      border: 1px solid #e9ecef;
+      margin-right: auto;
+      border-bottom-left-radius: 4px;
+      animation: slideInLeft 0.3s ease-out;
+    }
+
+    @keyframes slideInLeft {
+      from { opacity: 0; transform: translateX(-20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .bot-message::before {
+      content: "";
+      position: absolute;
+      left: -8px;
+      top: 0;
+      width: 0;
+      height: 0;
+      border: 8px solid transparent;
+      border-right-color: white;
+      border-left: 0;
+    }
+
+    .user-message::after {
+      content: "";
+      position: absolute;
+      right: -8px;
+      top: 0;
+      width: 0;
+      height: 0;
+      border: 8px solid transparent;
+      border-left-color: var(--primary);
+      border-right: 0;
+    }
+
+    .message-time {
+      display: block;
+      font-size: 0.7rem;
+      opacity: 0.7;
+      margin-top: 5px;
+      text-align: right;
+    }
+
+    .typing-indicator {
+      display: inline-flex;
+      padding: 12px 16px;
+      background: white;
+      border-radius: 18px;
+      border: 1px solid #e9ecef;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    .typing-indicator span {
+      height: 8px;
+      width: 8px;
+      background-color: var(--gray);
+      border-radius: 50%;
+      display: inline-block;
+      margin: 0 2px;
+      animation: bounce 1.5s infinite ease-in-out;
+    }
+
+    .typing-indicator span:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .typing-indicator span:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes bounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-5px); }
+    }
+
+    .chat-footer {
+      padding: 15px;
+      background: white;
+      border-top: 1px solid #e9ecef;
+      display: flex;
+      gap: 10px;
+      position: relative;
+    }
+
+    .chat-footer::before {
+      content: '';
+      position: absolute;
+      top: -10px;
+      left: 0;
+      width: 100%;
+      height: 10px;
+      background: linear-gradient(to top, rgba(0,0,0,0.05), transparent);
+    }
+
+    .input-group {
+      flex: 1;
+      position: relative;
+    }
+
+    .chat-input {
+      width: 100%;
+      padding: 12px 50px 12px 20px;
+      border: 1px solid #e9ecef;
+      border-radius: 30px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.95rem;
+      outline: none;
+      transition: all 0.3s;
+      background-color: #f8f9fa;
+    }
+
+    .chat-input:focus {
+      border-color: var(--primary-light);
+      box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+    }
+
+    .send-btn, .voice-btn {
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      border: none;
+      background-color: var(--primary);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .send-btn:hover, .voice-btn:hover {
+      background-color: var(--secondary);
+      transform: translateY(-2px);
+    }
+
+    .send-btn:active, .voice-btn:active {
+      transform: translateY(0);
+    }
+
+    .voice-btn.listening {
+      background-color: var(--accent);
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(247, 37, 133, 0.4); }
+      70% { box-shadow: 0 0 0 10px rgba(247, 37, 133, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(247, 37, 133, 0); }
+    }
+
+    .medicine-card {
+      background: white;
+      border-radius: 12px;
+      padding: 15px;
+      margin-top: 10px;
+      border: 1px solid #e9ecef;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+      animation: cardAppear 0.4s ease-out;
+    }
+
+    @keyframes cardAppear {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .medicine-card h4 {
+      color: var(--primary);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .medicine-card p {
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+    }
+
+    .medicine-card .info-label {
+      font-weight: 500;
+      color: var(--dark);
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .rating {
+      display: inline-flex;
+      align-items: center;
+      background: rgba(76, 201, 240, 0.1);
+      padding: 4px 8px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      margin-top: 5px;
+    }
+
+    .rating i {
+      color: #ffc107;
+      margin-right: 3px;
+      font-size: 0.7rem;
+    }
+
+    .side-effects {
+      color: var(--danger);
+    }
+
+    .suggestions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 15px;
+    }
+
+    .suggestion-chip {
+      background-color: rgba(67, 97, 238, 0.1);
+      color: var(--primary);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .suggestion-chip:hover {
+      background-color: rgba(67, 97, 238, 0.2);
+      transform: translateY(-2px);
+    }
+
+    /* Scrollbar styling */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--primary-light);
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--primary);
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .chat-app {
+        height: 100vh;
+        border-radius: 0;
+      }
+      
+      .message {
+        max-width: 90%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="chat-app">
+    <div class="chat-header">
+      <img src="https://via.placeholder.com/150/4361ee/ffffff?text=MA" alt="MediAI">
+      <div class="chat-header-info">
+        <h2>MediAI Assistant</h2>
+        <p><span class="online-dot"></span> Online</p>
+      </div>
+    </div>
+
+    <div class="chat-body" id="chat-body">
+      <div class="message bot-message">
+        <p>Hello! 👋 I'm your MediAI assistant. How can I help you today?</p>
+        <span class="message-time">Just now</span>
+      </div>
+      <div class="message bot-message">
+        <p>You can describe your symptoms or try one of these common questions:</p>
+        <div class="suggestions">
+          <div class="suggestion-chip">Headache and fever</div>
+          <div class="suggestion-chip">Stomach pain</div>
+          <div class="suggestion-chip">Allergy symptoms</div>
+          <div class="suggestion-chip">Cough and cold</div>
+        </div>
+        <span class="message-time">Just now</span>
+      </div>
+    </div>
+
+    <div class="chat-footer">
+      <div class="input-group">
+        <input type="text" class="chat-input" id="user-input" placeholder="Describe your symptoms..." autocomplete="off">
+        <button class="voice-btn" id="voice-btn"><i class="fas fa-microphone"></i></button>
+      </div>
+      <button class="send-btn" id="send-btn"><i class="fas fa-paper-plane"></i></button>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const chatBody = document.getElementById('chat-body');
+      const userInput = document.getElementById('user-input');
+      const sendBtn = document.getElementById('send-btn');
+      const voiceBtn = document.getElementById('voice-btn');
+      const synth = window.speechSynthesis;
+      let recognition;
+
+      // Initialize the chat
+      initChat();
+
+      function initChat() {
+        // Initialize speech recognition if available
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+          recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+          recognition.lang = 'en-US';
+          recognition.interimResults = false;
+          recognition.maxAlternatives = 1;
+          
+          recognition.onresult = handleVoiceResult;
+          recognition.onerror = handleVoiceError;
+          recognition.onend = handleVoiceEnd;
+        } else {
+          voiceBtn.style.display = 'none';
+        }
+
+        // Event listeners
+        sendBtn.addEventListener('click', handleUser()); // Corrected function name
+        userInput.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') handleUser() // Corrected function name
+        });
+        voiceBtn.addEventListener('click', toggleVoiceRecognition);
+        
+        // Add click handlers for suggestion chips
+        document.querySelectorAll('.suggestion-chip').forEach(chip => {
+          chip.addEventListener('click', () => {
+            userInput.value = chip.textContent;
+            handleUser(); // Corrected function name
+          });
+        });
+
+        // Initial greeting
+        setTimeout(() => {
+          speak("Hello! I'm your MediAI assistant. How can I help you today?");
+        }, 1000);
+      }
+
+      function handleUser(){ // Corrected function name
+        const text = userInput.value.trim();
+        if (!text) return;
+        
+        addMessage(text, 'user');
+        userInput.value = '';
+        
+        showTyping();
+        
+        // Simulate API call with timeout
+        setTimeout(() => {
+          hideTyping();
+          
+          // Mock response - in a real app, this would be a fetch call
+          const mockResponses = {
+            'headache and fever': {
+              medicine_name: 'Paracetamol',
+              uses: 'Pain relief and fever reduction',
+              side_effects: 'Nausea, stomach pain in rare cases',
+              average_review_: '92',
+              alternatives: ['Ibuprofen', 'Aspirin']
+            },
+            'stomach pain': {
+              medicine_name: 'Antacids',
+              uses: 'Relieving heartburn and indigestion',
+              side_effects: 'Constipation or diarrhea',
+              average_review_: '85',
+              alternatives: ['Omeprazole', 'Ranitidine']
+            },
+            'allergy symptoms': {
+              medicine_name: 'Cetirizine',
+              uses: 'Treating allergy symptoms like sneezing and itching',
+              side_effects: 'Drowsiness, dry mouth',
+              average_review_: '88',
+              alternatives: ['Loratadine', 'Fexofenadine']
+            },
+            'cough and cold': {
+              medicine_name: 'Dextromethorphan',
+              uses: 'Suppressing cough and cold symptoms',
+              side_effects: 'Dizziness, nausea in some cases',
+              average_review_: '79',
+              alternatives: ['Guaifenesin', 'Phenylephrine']
+            }
+          };
+          
+          const normalizedInput = text.toLowerCase();
+          let response;
+          
+          if (mockResponses[normalizedInput]) {
+            response = mockResponses[normalizedInput];
+          } else {
+            // Default response for unknown symptoms
+            response = {
+              medicine_name: 'Consult a Doctor',
+              uses: 'Professional medical advice is recommended',
+              side_effects: 'None when following doctor\'s instructions',
+              average_review_: '95',
+              alternatives: []
+            };
+          }
+          
+          displayMedicineResponse(response);
+        }, 1500 + Math.random() * 1000); // Random delay for realism
+      }
+
+      function displayMedicineResponse(data) {
+        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message bot-message';
+        
+        let alternativesHTML = '';
+        if (data.alternatives && data.alternatives.length > 0) {
+          alternativesHTML = `
+            <p><span class="info-label"><i class="fas fa-exchange-alt"></i> Alternatives:</span> 
+              ${data.alternatives.join(', ')}
+            </p>`;
+        }
+        
+        messageDiv.innerHTML = `
+          <p>Based on your symptoms, I recommend:</p>
+          <div class="medicine-card">
+            <h4><i class="fas fa-pills"></i> ${data.medicine_name}</h4>
+            <p><span class="info-label"><i class="fas fa-info-circle"></i> Uses:</span> ${data.uses}</p>
+            <p><span class="info-label"><i class="fas fa-exclamation-triangle side-effects"></i> Side Effects:</span> ${data.side_effects}</p>
+            ${alternativesHTML}
+            <div class="rating">
+              <i class="fas fa-star"></i>
+              <i class="fas fa-star"></i>
+              <i class="fas fa-star"></i>
+              <i class="fas fa-star"></i>
+              <i class="fas fa-star"></i>
+              <span>${data.average_review_}% positive reviews</span>
+            </div>
+          </div>
+          <div class="suggestions">
+            <div class="suggestion-chip">More info about ${data.medicine_name}</div>
+            <div class="suggestion-chip">Dosage instructions</div>
+            <div class="suggestion-chip">Find nearby pharmacies</div>
+          </div>
+          <span class="message-time">${time}</span>
+        `;
+        
+        chatBody.appendChild(messageDiv);
+        scrollToBottom();
+        
+        // Add click handlers for new suggestion chips
+        messageDiv.querySelectorAll('.suggestion-chip').forEach(chip => {
+          chip.addEventListener('click', () => {
+            userInput.value = chip.textContent;
+            handleUser(); // Corrected function name
+          });
+        });
+        
+        // Speak the response
+        speak(`For your symptoms, I recommend ${data.medicine_name}. ` +
+          `It's used for ${data.uses}. ` +
+          `Possible side effects include ${data.side_effects}. ` +
+          `It has an average review score of ${data.average_review_} percent.`);
+      }
+
+      function addMessage(text, sender = 'bot') {
+        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        const messageDiv = document.createElement('div');
+        messageDiv.className = sender === 'user' ? 'message user-message' : 'message bot-message';
+        messageDiv.innerHTML = `
+          <p>${text}</p>
+          <span class="message-time">${time}</span>
+        `;
+        
+        chatBody.appendChild(messageDiv);
+        scrollToBottom();
+      }
+
+      function showTyping() {
+        const typingDiv = document.createElement('div');
+        typingDiv.className = 'typing-indicator';
+        typingDiv.id = 'typing-indicator';
+        typingDiv.innerHTML = `
+          <span></span>
+          <span></span>
+          <span></span>
+        `;
+        chatBody.appendChild(typingDiv);
+        scrollToBottom();
+      }
+
+      function hideTyping() {
+        const typing = document.getElementById('typing-indicator');
+        if (typing) typing.remove();
+      }
+
+      function scrollToBottom() {
+        chatBody.scrollTo({
+          top: chatBody.scrollHeight,
+          behavior: 'smooth'
+        });
+      }
+
+      function speak(text) {
+        if (synth.speaking) {
+          synth.cancel();
+        }
+        
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 0.9;
+        utterance.pitch = 1.1;
+        synth.speak(utterance);
+      }
+
+      function toggleVoiceRecognition() {
+        if (!recognition) {
+          addMessage("Voice recognition is not supported in your browser", 'bot');
+          return;
+        }
+        
+        if (voiceBtn.classList.contains('listening')) {
+          recognition.stop();
+          voiceBtn.classList.remove('listening');
+        } else {
+          voiceBtn.classList.add('listening');
+          recognition.start();
+        }
+      }
+
+      function handleVoiceResult(event) {
+        const transcript = event.results[0][0].transcript;
+        userInput.value = transcript;
+        handleUser(); // Corrected function name
+      }
+
+      function handleVoiceError(event) {
+        console.error('Speech recognition error', event.error);
+        voiceBtn.classList.remove('listening');
+        addMessage("Sorry, I didn't catch that. Please try again.", 'bot');
+      }
+
+      function handleVoiceEnd() {
+        voiceBtn.classList.remove('listening');
+      }
+    });
+  </script>
+</body>
+</html>

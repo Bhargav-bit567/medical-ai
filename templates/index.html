@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Medical AI Assistant</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;700&family=Poppins:wght@600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      --secondary-gradient: linear-gradient(135deg, #74ebd5 0%, #ACB6E5 100%);
+      --user-message-bg: linear-gradient(135deg, #00b894 0%, #55efc4 100%);
+      --bot-message-bg: linear-gradient(135deg, #fdcb6e 0%, #ffeaa7 100%);
+      --warning-gradient: linear-gradient(135deg, #ff7675 0%, #fd79a8 100%);
+      --success-gradient: linear-gradient(135deg, #00b894 0%, #55efc4 100%);
+      --info-gradient: linear-gradient(135deg, #0984e3 0%, #74b9ff 100%);
+      --pulse-color: #ff4757;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Quicksand', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      color: #2d3436;
+      overflow: hidden;
+      position: relative;
+      background: #0f0c29;
+    }
+
+    /* Futuristic background with floating particles */
+    .particles {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -2;
+    }
+
+    .particle {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 50%;
+      filter: blur(1px);
+      animation: float linear infinite;
+    }
+
+    @keyframes float {
+      0% { transform: translateY(0) translateX(0); }
+      50% { transform: translateY(-100px) translateX(50px); }
+      100% { transform: translateY(0) translateX(0); }
+    }
+
+    /* Holographic effect for the chat container */
+    .chat-container {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      box-shadow: 0 25px 45px rgba(0,0,0,0.2);
+      width: 100%;
+      max-width: 450px;
+      padding: 25px;
+      display: flex;
+      flex-direction: column;
+      height: 90vh;
+      backdrop-filter: blur(15px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      position: relative;
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    .chat-container::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(
+        to bottom right,
+        rgba(255,255,255,0.1) 0%,
+        rgba(255,255,255,0) 60%
+      );
+      transform: rotate(30deg);
+      z-index: -1;
+      animation: shine 8s infinite;
+    }
+
+    @keyframes shine {
+      0% { transform: rotate(30deg) translate(-30%, -30%); }
+      100% { transform: rotate(30deg) translate(30%, 30%); }
+    }
+
+    .chat-container:hover {
+      box-shadow: 0 30px 60px rgba(0,0,0,0.3);
+      transform: translateY(-10px) scale(1.01);
+    }
+
+    .chat-header {
+      text-align: center;
+      font-size: 1.8rem;
+      color: white;
+      margin-bottom: 25px;
+      position: relative;
+      padding-bottom: 15px;
+      font-weight: 700;
+      font-family: 'Poppins', sans-serif;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+
+    .chat-header::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100px;
+      height: 4px;
+      background: var(--secondary-gradient);
+      border-radius: 4px;
+      box-shadow: 0 2px 10px rgba(116, 235, 213, 0.6);
+    }
+
+    .chat-box {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      scroll-behavior: smooth;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 15px;
+      margin-bottom: 20px;
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    /* Neon scrollbar */
+    .chat-box::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .chat-box::-webkit-scrollbar-track {
+      background: rgba(0,0,0,0.1);
+      border-radius: 10px;
+    }
+
+    .chat-box::-webkit-scrollbar-thumb {
+      background: linear-gradient(#74ebd5, #ACB6E5);
+      border-radius: 10px;
+    }
+
+    .chat-box::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(#667eea, #764ba2);
+    }
+
+    .chat-message {
+      max-width: 85%;
+      padding: 15px 20px;
+      border-radius: 20px;
+      animation: fadeInUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      position: relative;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      line-height: 1.6;
+      word-break: break-word;
+      opacity: 0;
+      transform: translateY(20px);
+      backdrop-filter: blur(5px);
+    }
+
+    .user-message {
+      background: linear-gradient(135deg, rgba(0, 184, 148, 0.8) 0%, rgba(85, 239, 196, 0.8) 100%);
+      color: white;
+      align-self: flex-end;
+      border-bottom-right-radius: 5px;
+      border-top-right-radius: 0;
+    }
+
+    .bot-message {
+      background: linear-gradient(135deg, rgba(253, 203, 110, 0.9) 0%, rgba(255, 234, 167, 0.9) 100%);
+      align-self: flex-start;
+      border-bottom-left-radius: 5px;
+      border-top-left-radius: 0;
+    }
+
+    .error-message {
+      background: linear-gradient(135deg, rgba(255, 118, 117, 0.9) 0%, rgba(253, 121, 168, 0.9) 100%);
+    }
+
+    .message-time {
+      display: block;
+      font-size: 0.7rem;
+      opacity: 0.8;
+      margin-top: 8px;
+      text-align: right;
+    }
+
+    .input-area {
+      display: flex;
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .input-area input {
+      flex: 1;
+      padding: 15px 25px;
+      border-radius: 30px;
+      border: none;
+      background: rgba(255, 255, 255, 0.8);
+      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+      font-family: 'Quicksand', sans-serif;
+      transition: all 0.3s ease;
+      font-size: 1rem;
+    }
+
+    .input-area input:focus {
+      outline: none;
+      background: white;
+      box-shadow: 0 5px 25px rgba(0,0,0,0.2);
+      transform: scale(1.01);
+    }
+
+    .input-area input::placeholder {
+      color: #636e72;
+      opacity: 0.7;
+    }
+
+    .btn-send, .btn-voice {
+      border-radius: 50%;
+      width: 55px;
+      height: 55px;
+      border: none;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-send {
+      background: var(--success-gradient);
+    }
+
+    .btn-send:hover {
+      transform: translateY(-5px) scale(1.1);
+      box-shadow: 0 10px 25px rgba(0, 184, 148, 0.4);
+    }
+
+    .btn-send:active {
+      transform: translateY(0) scale(0.95);
+    }
+
+    .btn-send::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(
+        to bottom right,
+        rgba(255,255,255,0.3) 0%,
+        rgba(255,255,255,0) 60%
+      );
+      transform: rotate(30deg);
+      animation: shine 5s infinite;
+    }
+
+    .btn-voice {
+      background: var(--info-gradient);
+    }
+
+    .btn-voice:hover {
+      transform: translateY(-5px) scale(1.1);
+      box-shadow: 0 10px 25px rgba(9, 132, 227, 0.4);
+    }
+
+    .btn-voice:active {
+      transform: translateY(0) scale(0.95);
+    }
+
+    .btn-voice.listening {
+      animation: pulse 0.8s infinite, colorChange 1.5s infinite alternate;
+    }
+
+    #typing-indicator {
+      font-style: italic;
+      font-size: 0.9rem;
+      color: rgba(255,255,255,0.8);
+      display: none;
+      margin-bottom: 10px;
+      padding-left: 15px;
+      position: relative;
+    }
+
+    #typing-indicator::before {
+      content: '...';
+      position: absolute;
+      left: -20px;
+      animation: typingDots 1.5s infinite;
+    }
+
+    .info-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 15px;
+      font-size: 0.75rem;
+      font-weight: bold;
+      margin-right: 8px;
+      color: white;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .medicine-badge {
+      background: var(--success-gradient);
+    }
+
+    .use-badge {
+      background: var(--info-gradient);
+    }
+
+    .warning-badge {
+      background: var(--warning-gradient);
+    }
+
+    .rating-badge {
+      background: linear-gradient(135deg, #fdcb6e 0%, #e17055 100%);
+    }
+
+    /* Animations */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.7); }
+      70% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(255, 71, 87, 0); }
+      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 71, 87, 0); }
+    }
+
+    @keyframes colorChange {
+      0% { background: var(--info-gradient); }
+      50% { background: var(--pulse-color); }
+      100% { background: var(--info-gradient); }
+    }
+
+    @keyframes typingDots {
+      0% { content: '.'; }
+      33% { content: '..'; }
+      66% { content: '...'; }
+    }
+
+    /* Voice wave animation */
+    .voice-wave {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 3px;
+      height: 20px;
+      margin-left: 5px;
+    }
+
+    .voice-wave span {
+      display: inline-block;
+      width: 3px;
+      background: currentColor;
+      border-radius: 3px;
+      animation: voiceWave 1.5s infinite ease-in-out;
+    }
+
+    .voice-wave span:nth-child(1) { height: 5px; animation-delay: 0.1s; }
+    .voice-wave span:nth-child(2) { height: 10px; animation-delay: 0.2s; }
+    .voice-wave span:nth-child(3) { height: 15px; animation-delay: 0.3s; }
+    .voice-wave span:nth-child(4) { height: 10px; animation-delay: 0.4s; }
+    .voice-wave span:nth-child(5) { height: 5px; animation-delay: 0.5s; }
+
+    @keyframes voiceWave {
+      0%, 100% { transform: scaleY(1); }
+      50% { transform: scaleY(0.3); }
+    }
+
+    /* Floating medicine icons */
+    .floating-icons {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: -1;
+      overflow: hidden;
+    }
+
+    .floating-icon {
+      position: absolute;
+      opacity: 0.1;
+      animation: floatIcon linear infinite;
+    }
+
+    @keyframes floatIcon {
+      0% { transform: translateY(0) translateX(0) rotate(0deg); }
+      100% { transform: translateY(-100vh) translateX(50px) rotate(360deg); }
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 480px) {
+      .chat-container {
+        height: 100vh;
+        border-radius: 0;
+        max-width: 100%;
+      }
+      
+      .chat-message {
+        max-width: 90%;
+      }
+      
+      .btn-send, .btn-voice {
+        width: 50px;
+        height: 50px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Floating particles background -->
+  <div class="particles" id="particles"></div>
+  
+  <!-- Floating medical icons -->
+  <div class="floating-icons" id="floating-icons"></div>
+
+  <div class="chat-container">
+    <div class="chat-header"><i class="fas fa-robot"></i> Medical AI Assistant</div>
+    <div id="chat-box" class="chat-box">
+      <div class="chat-message bot-message" style="opacity: 1; transform: translateY(0);">
+        Hello! I'm your Medical AI Assistant. Please describe your symptoms or ask about any medication.
+        <span class="message-time">Just now</span>
+      </div>
+    </div>
+    <div id="typing-indicator">Assistant is typing<span class="voice-wave"><span></span><span></span><span></span><span></span><span></span></span></div>
+    <div class="input-area">
+      <input type="text" id="user-input" placeholder="Type your symptoms..." autocomplete="off">
+      <button id="voice-btn" class="btn-voice" title="Voice Input"><i class="fas fa-microphone"></i></button>
+      <button id="send-btn" class="btn-send" title="Send Message"><i class="fas fa-paper-plane"></i></button>
+    </div>
+  </div>
+
+  <script>
+    // DOM Elements
+    const chatBox = document.getElementById('chat-box');
+    const userInputField = document.getElementById('user-input');
+    const sendButton = document.getElementById('send-btn');
+    const voiceButton = document.getElementById('voice-btn');
+    const typingIndicator = document.getElementById('typing-indicator');
+    const particlesContainer = document.getElementById('particles');
+    const iconsContainer = document.getElementById('floating-icons');
+
+    // Create floating particles
+    function createParticles() {
+      const particleCount = 50;
+      for (let i = 0; i < particleCount; i++) {
+        const particle = document.createElement('div');
+        particle.classList.add('particle');
+        
+        // Random properties
+        const size = Math.random() * 5 + 2;
+        const posX = Math.random() * 100;
+        const posY = Math.random() * 100;
+        const opacity = Math.random() * 0.5 + 0.1;
+        const duration = Math.random() * 20 + 10;
+        const delay = Math.random() * -20;
+        
+        particle.style.width = `${size}px`;
+        particle.style.height = `${size}px`;
+        particle.style.left = `${posX}%`;
+        particle.style.top = `${posY}%`;
+        particle.style.opacity = opacity;
+        particle.style.animationDuration = `${duration}s`;
+        particle.style.animationDelay = `${delay}s`;
+        
+        particlesContainer.appendChild(particle);
+      }
+    }
+
+    // Create floating medical icons
+    function createFloatingIcons() {
+      const icons = ['fa-heartbeat', 'fa-pills', 'fa-syringe', 'fa-stethoscope', 'fa-hospital', 'fa-prescription-bottle-alt', 'fa-thermometer', 'fa-band-aid', 'fa-procedures'];
+      const iconCount = 15;
+      
+      for (let i = 0; i < iconCount; i++) {
+        const icon = document.createElement('i');
+        icon.classList.add('fas', 'floating-icon');
+        icon.classList.add(icons[Math.floor(Math.random() * icons.length)]);
+        
+        // Random properties
+        const size = Math.random() * 30 + 20;
+        const posX = Math.random() * 100;
+        const posY = Math.random() * 100 + 100;
+        const duration = Math.random() * 30 + 30;
+        const delay = Math.random() * -30;
+        
+        icon.style.fontSize = `${size}px`;
+        icon.style.left = `${posX}%`;
+        icon.style.top = `${posY}%`;
+        icon.style.animationDuration = `${duration}s`;
+        icon.style.animationDelay = `${delay}s`;
+        icon.style.color = `hsl(${Math.random() * 60 + 180}, 70%, 60%)`;
+        
+        iconsContainer.appendChild(icon);
+      }
+    }
+
+    // Initialize visual effects
+    createParticles();
+    createFloatingIcons();
+
+    // Speech Synthesis and Recognition
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    // Check if browser supports speech synthesis
+    let voices = [];
+    const synth = window.speechSynthesis;
+
+    function loadVoices() {
+      voices = synth.getVoices();
+      console.log('Voices loaded:', voices);
+    }
+
+    // Load voices when they become available
+    if (synth.onvoiceschanged !== undefined) {
+      synth.onvoiceschanged = loadVoices;
+    }
+
+    // Get current time for messages
+    function getCurrentTime() {
+      const now = new Date();
+      return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    // Event Listeners
+    userInputField.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        const input = userInputField.value.trim();
+        if (input !== "") {
+          handleUserMessage(input);
+        }
+      }
+    });
+
+    sendButton.addEventListener("click", () => {
+      const input = userInputField.value.trim();
+      if (input !== "") {
+        handleUserMessage(input);
+      }
+    });
+
+    voiceButton.addEventListener("click", toggleVoiceRecognition);
+
+    // Voice Recognition Functions
+    function toggleVoiceRecognition() {
+      if (voiceButton.classList.contains('listening')) {
+        recognition.stop();
+        voiceButton.classList.remove('listening');
+        voiceButton.innerHTML = '<i class="fas fa-microphone"></i>';
+      } else {
+        try {
+          recognition.start();
+          voiceButton.classList.add('listening');
+          voiceButton.innerHTML = '<i class="fas fa-stop"></i>';
+        } catch (e) {
+          console.error('Speech recognition error:', e);
+          displayMessage("Couldn't start voice recognition. Please try again.", 'bot');
+        }
+      }
+    }
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      userInputField.value = transcript;
+      handleUserMessage(transcript);
+    };
+
+    recognition.onerror = (event) => {
+      console.error('Speech recognition error', event.error);
+      displayMessage("Sorry, I couldn't understand that. Please try again.", 'bot');
+      voiceButton.classList.remove('listening');
+      voiceButton.innerHTML = '<i class="fas fa-microphone"></i>';
+    };
+
+    recognition.onend = () => {
+      if (voiceButton.classList.contains('listening')) {
+        voiceButton.classList.remove('listening');
+        voiceButton.innerHTML = '<i class="fas fa-microphone"></i>';
+      }
+    };
+
+    // Message Handling
+    function handleUserMessage(message) {
+      displayMessage(message, 'user');
+      userInputField.value = "";
+      getBotResponse(message);
+    }
+
+    function getBotResponse(userInput) {
+      typingIndicator.style.display = "block";
+      
+      fetch('/predict', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `illness=${encodeURIComponent(userInput)}`
+      })
+      .then(response => response.json())
+      .then(data => {
+        typingIndicator.style.display = "none";
+        
+        if (data.error) {
+          displayMessage(`❌ ${data.error}`, 'bot', false, true);
+          speak(data.error);
+        } else {
+          const reply = `
+            💊 <strong>Medicine:</strong> ${data.medicine_name}
+            <br>🔹 <strong>Uses:</strong> ${data.uses}
+            <br>⚠️ <strong>Side Effects:</strong> ${data.side_effects}
+            <br>⭐ <strong>Avg. Review:</strong> ${data.average_review_}%
+            <br>🎯 <strong>Match Confidence:</strong> ${data.confidence}%
+            <span class="message-time">${getCurrentTime()}</span>
+          `;
+          displayMessage(reply, 'bot', true);
+          
+          const speechText = `
+            Medicine: ${data.medicine_name}. 
+            Uses: ${data.uses}. 
+            Side Effects: ${data.side_effects}. 
+            Average review: ${data.average_review_} percent. 
+            Match confidence: ${data.confidence} percent.
+          `;
+          speak(speechText);
+        }
+      })
+      .catch(error => {
+        typingIndicator.style.display = "none";
+        displayMessage("⚠️ Sorry, I'm having trouble connecting to the medical database. Please try again later.", 'bot', false, true);
+        speak("Sorry, I'm having trouble connecting to the medical database. Please try again later.");
+        console.error('Error:', error);
+      });
+    }
+
+    function displayMessage(message, type, isHTML = false, isError = false) {
+      const msg = document.createElement('div');
+      msg.className = `chat-message ${type}-message`;
+      
+      if (isError) {
+        msg.classList.add('error-message');
+      }
+      
+      if (isHTML) {
+        msg.innerHTML = message;
+      } else {
+        msg.textContent = message;
+        const timeSpan = document.createElement('span');
+        timeSpan.className = 'message-time';
+        timeSpan.textContent = getCurrentTime();
+        msg.appendChild(timeSpan);
+      }
+      
+      chatBox.appendChild(msg);
+      chatBox.scrollTop = chatBox.scrollHeight;
+      
+      // Trigger animation
+      setTimeout(() => {
+        msg.style.opacity = 1;
+        msg.style.transform = 'translateY(0)';
+      }, 10);
+    }
+
+    // Text-to-Speech Function
+    function speak(text) {
+      if ('speechSynthesis' in window) {
+        // Cancel any ongoing speech
+        synth.cancel();
+        
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 0.9;
+        utterance.pitch = 1;
+        utterance.volume = 1;
+        
+        // Try to find a pleasant voice
+        const preferredVoices = [
+          'Google UK English Female',
+          'Microsoft Zira Desktop',
+          'Samantha', // Mac OS
+          'Karen', // Australian
+          'Tessa' // South African
+        ];
+        
+        const availableVoices = synth.getVoices();
+        if (availableVoices.length > 0) {
+          for (const voiceName of preferredVoices) {
+            const voice = availableVoices.find(v => v.name.includes(voiceName));
+            if (voice) {
+              utterance.voice = voice;
+              break;
+            }
+          }
+          
+          if (!utterance.voice) {
+            utterance.voice = availableVoices.find(v => v.lang.includes('en')) || availableVoices[0];
+          }
+        }
+        
+        // Add slight delay for better UX
+        setTimeout(() => {
+          synth.speak(utterance);
+        }, 300);
+      } else {
+        console.log('Text-to-speech not supported');
+      }
+    }
+
+    // Initialize voices
+    loadVoices();
+  </script>
+</body>
+</html>
